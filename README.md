@@ -7,6 +7,7 @@ The package allows you to:
 - get messages
 - send messages
 - delete messages
+- Explicit message listener
 
 > Decided to start this package because [_react-native-android-sms_](https://github.com/msmakhlouf/react-native-android-sms) wasn't maintained at the time.
 
@@ -63,6 +64,7 @@ Add permissions to your `android/app/src/main/AndroidManifest.xml` file.
   <uses-permission android:name="android.permission.READ_SMS" />
   <uses-permission android:name="android.permission.WRITE_SMS" />
   <uses-permission android:name="android.permission.SEND_SMS" />
+  <uses-permission android:name="android.permission.RECEIVE_SMS" />
 ...
 ```
 
@@ -72,11 +74,12 @@ You need to add permissions manually. `react-native-get-sms-android` does not au
 
 You need to require permissions in your `AndroidManifest.xml` file's `application` element based on what functions you plan to use like [the official documentation](https://developer.android.com/guide/topics/permissions/overview) describes:
 
-| Function            | Permission needed            |
-| ------------------- | ---------------------------- |
-| SmsAndroid.list     | android.permission.READ_SMS  |
-| SmsAndroid.delete   | android.permission.WRITE_SMS |
-| SmsAndroid.autoSend | android.permission.SEND_SMS  |
+| Function                  |   Permission needed               |
+| ------------------------- | --------------------------------- |
+| SmsAndroid.list           |   android.permission.READ_SMS     |
+| SmsAndroid.delete         |   android.permission.WRITE_SMS    |
+| SmsAndroid.autoSend       |   android.permission.SEND_SMS     |
+| SmsAndroid.SMSListener    |   android.permission.RECEIVE_SMS  |
 
 ## Usage
 
@@ -187,6 +190,31 @@ SmsAndroid.delete(
 );
 ```
 
+### SMS Listener
+
+- Add a receiver callback
+
+```javascript
+import SmsAndroid from 'react-native-get-sms-android';
+
+SmsAndroid.SMSListener(
+    (message) => {
+      console.log(
+        'sender', message.originatingAddress, 
+        'message', message.body,
+        'timestamp', message.timestamp,
+      )
+    }
+);
+```
+- Remove Listener
+
+```javascript
+import SmsAndroid from 'react-native-get-sms-android';
+
+SmsAndroid.unregisterSMSListener();
+```
+
 #### Important note on deleting messages
 For Android > 5, the only app permitted to **delete** an SMS message is the app installed as the default SMS handler.
 
@@ -248,6 +276,7 @@ DeviceEventEmitter.addListener('sms_onDelivery', (msg) => {
 ## Note
 
 - Does not work with Expo as it's not possible to include custom native modules beyond the React Native APIs and components that are available in the Expo client app. The information [here](https://github.com/react-community/create-react-native-app/blob/master/react-native-scripts/template/README.md#ejecting-from-create-react-native-app) might help with integrating the module while still using Expo.
+- SMS Listener will only work on application's context(when application is running). Google Play Store may not allow this method of SMS BroadCast Receiver This is only recommended for personal usage.
 
 ## Contributions welcome!
 
