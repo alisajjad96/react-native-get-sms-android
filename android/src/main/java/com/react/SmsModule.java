@@ -11,6 +11,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeMap;
 
 import android.content.ContentValues;
 import android.os.Bundle;
@@ -51,6 +52,9 @@ public class SmsModule extends ReactContextBaseJavaModule /*implements LoaderMan
     private Callback cb_autoSend_succ = null;
     private Callback cb_autoSend_err = null;
 
+    private BroadcastReceiver smsReceiver = null;
+    private Callback cb_receive = null;
+
     public SmsModule(ReactApplicationContext reactContext) {
         super(reactContext);
         mReactContext = reactContext;
@@ -61,6 +65,63 @@ public class SmsModule extends ReactContextBaseJavaModule /*implements LoaderMan
     @Override
     public String getName() {
         return "Sms";
+    }
+
+    private void sendOnReceive(String sender, String message, double time){
+        WritableNativeMap receivedMessage = new WritableNativeMap();
+        receivedMessage.putString("originatingAddress", sender);
+        receivedMessage.putString("body", message);
+        receivedMessage.putDouble("timestamp", time);
+
+        if(cb_receive != null){
+            cb_receive.invoke(receivedMessage);
+        }
+    }
+
+    @ReactMethod
+    public void SMSListener(final Callback Listener) {
+
+        cb_receive = Listener;
+
+        if( smsReceiver != null){
+            context.unregisterReceiver(smsReceiver);
+        }
+
+        smsReceiver = new BroadcastReceiver(){
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Bundle bundle = intent.getExtras();
+                if (bundle != null) {
+                    Object[] pdus = (Object[]) bundle.get("pdus");
+                    if (pdus.length == 0) {
+                        return;
+                    }
+                    // large message might be broken into many
+                    SmsMessage[] messages = new SmsMessage[pdus.length];
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < pdus.length; i++) {
+                        messages[i] = SmsMessage.createFromPdu((byte[]) pdus[i]);
+                        sb.append(messages[i].getMessageBody());
+                    }
+
+                    String sender = messages[0].getOriginatingAddress();
+                    String message = sb.toString();
+                    double time = messages[0].getTimestampMillis();
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+                    sendOnReceive(sender, message, time);
+                }
+            }
+        };
+
+        context.registerReceiver(smsReceiver, new IntentFilter("android.provider.Telephony.SMS_RECEIVED"));
+    }
+
+    @ReactMethod
+    public void unregisterSMSListener() {
+
+        if( smsReceiver != null){
+            context.unregisterReceiver(smsReceiver);
+        }
     }
 
     @ReactMethod
