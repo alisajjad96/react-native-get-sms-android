@@ -15,7 +15,6 @@ import com.facebook.react.bridge.WritableNativeMap;
 
 import android.content.ContentValues;
 import android.os.Bundle;
-import android.widget.Toast;
 import android.app.LoaderManager;
 import android.app.PendingIntent;
 import android.app.PendingIntent.CanceledException;
@@ -107,7 +106,6 @@ public class SmsModule extends ReactContextBaseJavaModule /*implements LoaderMan
                     String sender = messages[0].getOriginatingAddress();
                     String message = sb.toString();
                     double time = messages[0].getTimestampMillis();
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
                     sendOnReceive(sender, message, time);
                 }
             }
